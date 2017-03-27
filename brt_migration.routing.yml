@@ -1,0 +1,7 @@
+
+brt_migration.test_page:
+  path: '/test-brt-migration'
+  defaults:
+    _controller: 'Drupal\brt_migration\Controller\EloquaFormController::pageForm'
+  requirements:
+    _permission: 'access content'

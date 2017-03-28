@@ -10,19 +10,23 @@ use Drupal\brt_migration\Plugin\migrate\ParagraphConfigSource;
  * Drupal 8 field collections source from database.
  *
  * @MigrateSource(
- *   id = "field_collections_a02_intro_text"
+ *   id = "field_collections_all"
  * )
  */
-class FieldCollectionsA02IntroText extends ParagraphConfigSource {
+class FieldCollectionsAll extends ParagraphConfigSource {
 
   /**
    * @inheritDoc
    */
   public function query() {
-    $query = $this->select('cache_config', 'cc')->fields('cc', array('cid', 'data'));
 
-    $cid = "field_collection.field_collection.{$this->configuration['configuration_object']}";
-    $query->condition('cc.cid', $cid);
+    $cids = [];
+    foreach ($this->configuration['field_collections'] as $field_collection) {
+      $cids[] = "field_collection.field_collection.{$field_collection}";
+    }
+
+    $query = $this->select('cache_config', 'cc')->fields('cc', array('cid', 'data'));
+    $query->condition('cc.cid', $cids, 'IN');
 
     return $query;
   }
@@ -47,17 +51,20 @@ class FieldCollectionsA02IntroText extends ParagraphConfigSource {
    */
   public function prepareRow(Row $row) {
 
+    $paragraph_id = $this->generateParagraphId($row);
+    $field_collection_machine_id = $this->getCurrentFieldCollectionMachineName($row);
+
     // Step 1.
-    $this->generateParagraphTypeBaseFields($row);
+    $this->generateParagraphTypeBaseFields($row, $paragraph_id);
 
     // Step 2.
-    $this->retrieveNonBaseFields($row);
+    $fields = $this->retrieveNonBaseFields($row, $paragraph_id, $field_collection_machine_id);
 
     // Step 3
-    $this->retrieveFormDisplayFields($row);
+    $this->retrieveFormDisplayFields($row, $paragraph_id, $fields, $field_collection_machine_id);
 
     // Step 4.
-    $this->retrieveViewDisplays($row);
+    $this->retrieveViewDisplays($row, $paragraph_id, $fields, $field_collection_machine_id);
 
     // Step 5.
     $this->retrieveCustomBundleViewModes($row);
@@ -76,23 +83,19 @@ class FieldCollectionsA02IntroText extends ParagraphConfigSource {
   /**
    * {@inheritdoc}
    */
-  protected function generateParagraphTypeBaseFields(Row $row) {
-    $serialized_data = $row->getSourceProperty('data');
-
-    $data = unserialize($serialized_data);
-    $this->paragraphId = str_replace('field__', '', $data['id']);
-    $clean = str_replace('_', ' ', $this->paragraphId);
+  protected function generateParagraphTypeBaseFields(Row $row, $paragraph_id) {
+    $clean = str_replace('_', ' ', $paragraph_id);
     $label = ucfirst($clean);
-    $row->setSourceProperty('type', $this->paragraphId);
+    $row->setSourceProperty('type', $paragraph_id);
     $row->setSourceProperty('name', $label);
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function retrieveNonBaseFields(Row $row) {
+  protected function retrieveNonBaseFields(Row $row, $paragraph_id, $field_collection_machine_id) {
     $fields = [];
-    $cid = "field.field.field_collection_item.{$this->configuration['configuration_object']}.%";
+    $cid = "field.field.field_collection_item.{$field_collection_machine_id}.%";
     $query = $this->select('cache_config', 'cc')->fields('cc', ['cid', 'data']);
     $query->condition('cc.cid', $cid, 'LIKE');
     $results = $query->execute()->fetchAll();
@@ -102,7 +105,7 @@ class FieldCollectionsA02IntroText extends ParagraphConfigSource {
       $field_name = array_pop($field_parts);
       $data = unserialize($result['data']);
       $data['entity_type'] = 'paragraph';
-      $data['bundle'] = $this->paragraphId;
+      $data['bundle'] = $paragraph_id;
 
       $this->removeUnWantedfields($data);
 
@@ -121,24 +124,25 @@ class FieldCollectionsA02IntroText extends ParagraphConfigSource {
       $fields[$field_name]['storage'] = $data;
     }
 
-    $this->fieldsDoExist = !empty($fields);
+//    $this->fieldsDoExist = !empty($fields);
 
     $row->setSourceProperty('fields', $fields);
+    return $fields;
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function retrieveFormDisplayFields(Row $row) {
-    if ($this->fieldsDoExist) {
-      $cid = "core.entity_form_display.field_collection_item.{$this->configuration['configuration_object']}.%";
+  protected function retrieveFormDisplayFields(Row $row, $paragraph_id, $fields, $field_collection_machine_id) {
+    if (!empty($fields)) {
+      $cid = "core.entity_form_display.field_collection_item.{$field_collection_machine_id}.%";
       $query = $this->select('cache_config', 'cc')->fields('cc', ['cid', 'data']);
       $query->condition('cc.cid', $cid, 'LIKE');
       $results = $query->execute()->fetchAll();
       $data = [];
       foreach ($results as $result) {
         $data = unserialize($result['data']);
-        $data['bundle'] = $this->paragraphId;
+        $data['bundle'] = $paragraph_id;
         $data['targetEntityType'] = 'paragraph';
 
         $this->removeUnWantedfields($data);
@@ -151,11 +155,11 @@ class FieldCollectionsA02IntroText extends ParagraphConfigSource {
   /**
    * {@inheritdoc}
    */
-  protected function retrieveViewDisplays(Row $row) {
+  protected function retrieveViewDisplays(Row $row, $paragraph_id, $fields, $field_collection_machine_id) {
 
-    if ($this->fieldsDoExist) {
+    if (!empty($fields)) {
       $view_displays = [];
-      $cid = "core.entity_view_display.field_collection_item.{$this->configuration['configuration_object']}.%";
+      $cid = "core.entity_view_display.field_collection_item.{$field_collection_machine_id}.%";
 
       $query = $this->select('cache_config', 'cc')->fields('cc', ['cid', 'data']);
       $query->condition('cc.cid', $cid, 'LIKE');
@@ -163,7 +167,7 @@ class FieldCollectionsA02IntroText extends ParagraphConfigSource {
 
       foreach ($results as $result) {
         $data = unserialize($result['data']);
-        $data['bundle'] = $this->paragraphId;
+        $data['bundle'] = $paragraph_id;
         $data['targetEntityType'] = 'paragraph';
 
         $this->removeUnWantedfields($data);

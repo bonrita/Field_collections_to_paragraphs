@@ -1,0 +1,28 @@
+id: field_collections_all
+label: 'Convert field collections to paragraphs'
+migration_group: field_collections
+migration_tags:
+  - 'BRT field collections'
+source:
+  plugin: field_collections_all
+  field_collections:
+    - field__a02_intro_text
+    - field_a07_process_list
+    - field_a08_benefits
+    - field_a09_downloads
+    - field_a13_video_playlist
+    - field_b01_facts
+    - field_b02_partners
+    - field_c06_platforms
+    - field_c08_related_items
+    - field_his_carousel_data
+    - field_menu_summary_block
+    - field_press_release_headline
+    - field__a01_image_headline
+    - field__c09_contact
+
+process:
+  id: type
+  label: name
+destination:
+  plugin: entity:paragraphs_type

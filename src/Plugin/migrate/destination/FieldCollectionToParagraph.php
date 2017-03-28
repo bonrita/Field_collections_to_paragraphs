@@ -115,7 +115,6 @@ class FieldCollectionToParagraph extends ParagraphConfigDestination {
   /**
    * Drupal\migrate\Event\ImportAwareInterface
    * Implementing the above interface in this plugin will make the migrate module call the method "preimport"
-   * The opposite is true it won't be called.
    * @see core/modules/migrate/src/Plugin/PluginEventSubscriber.php :: invoke() line 37
    */
 

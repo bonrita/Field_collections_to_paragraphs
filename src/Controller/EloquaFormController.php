@@ -36,24 +36,24 @@ class EloquaFormController extends ControllerBase {
   public function pageForm() {
 
 //    //-------------------------
-    $migration_id = 'collections_intro_text';
-//    $this->migrateFieldCollectionToParagraph($migration_id);
+    $migration_id = 'field_collections_all';
+    $this->migrateFieldCollectionToParagraph($migration_id);
 //    //----------------------------
     // ON POST IMPORT DELETE FIELD
 //    $this->delete_field_from_node_bundles();
     //---------------------------
 
 
-    // Switch to external database
-    \Drupal\Core\Database\Database::setActiveConnection('migrate_brt');
-    // Get a connection going
-    $db = \Drupal\Core\Database\Database::getConnection();
-
-    $entity = \Drupal::entityTypeManager()->getStorage('field_storage_config')->load('node.field__a02_intro_text');
-
-    $bundles = $entity->getBundles();
-    // Switch back
-    \Drupal\Core\Database\Database::setActiveConnection();
+//    // Switch to external database
+//    \Drupal\Core\Database\Database::setActiveConnection('migrate_brt');
+//    // Get a connection going
+//    $db = \Drupal\Core\Database\Database::getConnection();
+//
+//    $entity = \Drupal::entityTypeManager()->getStorage('field_storage_config')->load('node.field__a02_intro_text');
+//
+//    $bundles = $entity->getBundles();
+//    // Switch back
+//    \Drupal\Core\Database\Database::setActiveConnection();
 
 
 //    $entities = \Drupal::entityTypeManager()->getListBuilder('field_storage_config')->load();
